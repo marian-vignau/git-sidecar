@@ -78,25 +78,27 @@ This tool is perfect for:
 - Python 3.8 or higher
 - Git installed and configured
 - A git repository (for using the hook functionality)
-- `pipx` or `uvx` for installation (recommended)
+- `pipx` or `uv` (with `uv tool install`) for installation (recommended)
 
 ## 🚀 Installation
 
-### Recommended: Install via pipx or uvx
+### Recommended: Install via pipx or uv tool
 
 Install from GitHub repository:
 
 **Using pipx:**
 ```bash
-pipx install git+https://github.com/<user>/<repo>.git
+pipx install git+https://github.com/marian-vignau/git-sidecar.git
 ```
 
-**Using uvx (from uv):**
+**Using uv tool (from uv - for permanent installation):**
 ```bash
-uvx sidecar@git+https://github.com/<user>/<repo>.git
+uv tool install git+https://github.com/marian-vignau/git-sidecar.git
 ```
 
 After installation, the `sidecar` command will be available globally.
+
+**Note:** `uvx sidecar@git+...` runs the command once in an ephemeral environment but does not permanently install it. Use `uv tool install` for permanent installation (equivalent to `pipx install`).
 
 ### Alternative: Manual Installation
 
