@@ -1,8 +1,25 @@
-# DirTickets
+# GitSidecar
+
+<p align="center">
+  <img alt="GitSidecar logo" src="LogoC.png" width="180" />
+</p>
+
+<p align="center">
+  <a href="https://github.com/marian-vignau/GitSidecar/actions/workflows/ci.yml">
+    <img alt="Build Status" src="https://github.com/marian-vignau/GitSidecar/actions/workflows/ci.yml/badge.svg">
+  </a>
+  <a href="https://codecov.io/gh/marian-vignau/GitSidecar" >
+    <img src="https://codecov.io/gh/marian-vignau/GitSidecar/branch/main/graph/badge.svg" alt="Code Coverage"/>
+  </a>
+  <a href="https://github.com/marian-vignau/GitSidecar/blob/main/LICENSE">
+    <img alt="License" src="https://img.shields.io/github/license/marian-vignau/GitSidecar">
+  </a>
+</p>
+
 
 **Automatically manage working directories for your git ticket branches**
 
-DirTickets is a command-line tool that automatically creates and manages dedicated working directories whenever you checkout a ticket branch in git. It eliminates the hassle of manually organizing files, documentation, notebooks, and scripts for each ticket you work on.
+Sidecar is a command-line tool that automatically creates and manages dedicated working directories whenever you checkout a ticket branch in git. It eliminates the hassle of manually organizing files, documentation, notebooks, and scripts for each ticket you work on.
 
 ## 🎯 Target Users
 
@@ -23,22 +40,22 @@ This tool is perfect for:
 - Save debugging logs
 - Reference previous similar tickets
 
-**Solution**: DirTickets automatically creates `~/tickets/JIRA-789-feature-name/` when you checkout the branch, giving you a dedicated space for everything related to this ticket.
+**Solution**: Sidecar automatically creates `~/tickets/JIRA-789-feature-name/` when you checkout the branch, giving you a dedicated space for everything related to this ticket.
 
 ### Use Case 2: Quick Access from Anywhere
 **Problem**: You want quick access to your current ticket's directory from your Downloads folder or desktop.
 
-**Solution**: DirTickets creates a `CurrentTicket` symlink in configured locations (e.g., `~/Downloads/CurrentTicket`), so you can always quickly navigate to your active ticket directory.
+**Solution**: Sidecar creates a `CurrentTicket` symlink in configured locations (e.g., `~/Downloads/CurrentTicket`), so you can always quickly navigate to your active ticket directory.
 
 ### Use Case 3: Shared Tools Library
 **Problem**: You have utility scripts, notebooks, and helper tools you use across all tickets, but copying them manually is tedious.
 
-**Solution**: DirTickets automatically symlinks your tools library (e.g., `notebooks/`, `scripts/`, `utils/`) into every ticket directory, so they're always available without duplication.
+**Solution**: Sidecar automatically symlinks your tools library (e.g., `notebooks/`, `scripts/`, `utils/`) into every ticket directory, so they're always available without duplication.
 
 ### Use Case 4: Consistent Ticket Organization
 **Problem**: When switching between multiple tickets, you forget where you saved files or lose track of ticket-specific resources.
 
-**Solution**: DirTickets ensures every ticket branch gets its own directory automatically, maintaining consistent organization across your entire workflow.
+**Solution**: Sidecar ensures every ticket branch gets its own directory automatically, maintaining consistent organization across your entire workflow.
 
 ## ✨ Key Features
 
@@ -79,7 +96,7 @@ This tool is perfect for:
 1. **Clone or download this repository**:
    ```bash
    git clone <repository-url>
-   cd DirTickets
+   cd sidecar
    ```
 
 2. **Make the script executable** (if needed):
@@ -95,14 +112,14 @@ This tool is perfect for:
    Or install it from any git repository:
    ```bash
    cd /path/to/your/git/repo
-   python3 /path/to/DirTickets/main.py hook install
+   python3 /path/to/sidecar/main.py hook install
    ```
 
 ## 📖 Usage
 
 ### Basic Workflow
 
-1. **Configure DirTickets** (optional - uses sensible defaults):
+1. **Configure Sidecar** (optional - uses sensible defaults):
    ```bash
    # View current configuration
    python3 main.py config --view
@@ -123,7 +140,7 @@ This tool is perfect for:
 2. **Work with your tickets normally**:
    ```bash
    git checkout JIRA-123-implement-feature
-   # DirTickets automatically:
+   # Sidecar automatically:
    # - Creates ~/tickets/JIRA-123-implement-feature/
    # - Links your tools library into it
    # - Creates CurrentTicket symlinks in configured locations
@@ -146,7 +163,7 @@ Installs a post-checkout hook that automatically processes branches when you che
 ```bash
 python3 main.py hook uninstall
 ```
-Removes the DirTickets post-checkout hook.
+Removes the Sidecar post-checkout hook.
 
 #### Process Current Checkout (Manual)
 ```bash
@@ -177,7 +194,7 @@ List all existing ticket directories in your workspace.
 
 ## ⚙️ Configuration
 
-Configuration is stored in `~/.dirtickets/config.ini`. The default configuration includes:
+Configuration is stored in `~/.sidecar/config.ini`. The default configuration includes:
 
 ```ini
 [paths]
@@ -238,7 +255,7 @@ After checking out `JIRA-789-implement-authentication`:
 
 ## 🔍 How It Works
 
-1. **Branch Detection**: When you checkout a branch, DirTickets analyzes the branch name
+1. **Branch Detection**: When you checkout a branch, sidecar analyzes the branch name
 2. **Pattern Matching**: Checks if the branch matches your configured ticket pattern
 3. **Directory Creation**: Creates (or finds existing) ticket directory with sanitized name
 4. **Tool Linking**: Symlinks configured tools from your tools library
@@ -249,7 +266,7 @@ After checking out `JIRA-789-implement-authentication`:
 ### Hook Not Running
 - Verify the hook is installed: Check `.git/hooks/post-checkout` exists
 - Ensure the hook is executable: `chmod +x .git/hooks/post-checkout`
-- Check hook content contains `DirTickets`
+- Check hook content contains `sidecar`
 
 ### Directory Not Created
 - Verify you're in a git repository: `git rev-parse --git-dir`
@@ -267,7 +284,50 @@ After checking out `JIRA-789-implement-authentication`:
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Please follow these guidelines:
+
+### Development Setup
+
+1. **Fork and clone the repository**:
+   ```bash
+   git clone <your-fork-url>
+   cd GitSidecar
+   ```
+
+2. **Run tests locally before submitting**:
+   ```bash
+   python3 -m unittest test_sidecar.py -v
+   ```
+   All tests must pass before submitting a Pull Request.
+
+### Pull Request Process
+
+1. **Create a feature branch** from `main`:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+
+2. **Make your changes** and ensure tests pass locally
+
+3. **Submit a Pull Request** targeting the `main` branch
+
+4. **CI Requirements**: 
+   - All automated tests must pass (runs on Python 3.8-3.12)
+   - Code quality checks must pass
+   - PR must be approved before merging
+
+### Branch Protection
+
+The `main` branch is protected. Direct commits to `main` are not allowed. All changes must go through Pull Requests that:
+- Pass all CI tests
+- Receive required approvals
+- Have no merge conflicts
+
+**Note**: Repository administrators should configure branch protection rules in GitHub Settings → Branches → Add rule for `main` branch:
+- ✅ Require a pull request before merging
+- ✅ Require status checks to pass before merging (check `test`)
+- ✅ Require branches to be up to date before merging
+- ✅ Include administrators
 
 ## 📝 License
 

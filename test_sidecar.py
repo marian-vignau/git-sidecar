@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Comprehensive test suite for DirTickets using Python standard library.
+Comprehensive test suite for sidecar using Python standard library.
 """
 
 import io
@@ -22,7 +22,7 @@ class TestConfigManager(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         self.temp_dir = tempfile.mkdtemp()
-        self.config_dir = Path(self.temp_dir) / ".dirtickets"
+        self.config_dir = Path(self.temp_dir) / ".sidecar"
         self.config_file = self.config_dir / "config.ini"
         self.config_dir.mkdir(parents=True, exist_ok=True)
     
@@ -744,7 +744,7 @@ class TestGitHookManager(unittest.TestCase):
             
             # Check hook content
             content = hook_file.read_text()
-            self.assertIn('DirTickets', content)
+            self.assertIn('sidecar', content)
             self.assertIn('process', content)
             self.assertIn(str(self.script_path.resolve()), content)
     
@@ -787,12 +787,12 @@ class TestGitHookManager(unittest.TestCase):
             
             self.assertTrue(success)
             content = hook_file.read_text()
-            self.assertIn('DirTickets', content)
+            self.assertIn('sidecar', content)
     
     def test_uninstall_hook_success(self):
         """Remove hook file."""
         hook_file = self.hooks_dir / "post-checkout"
-        hook_file.write_text("#!/bin/sh\n# DirTickets post-checkout hook\npython3 main.py process\n")
+        hook_file.write_text("#!/bin/sh\n# sidecar post-checkout hook\npython3 main.py process\n")
         
         with patch('pathlib.Path.cwd', return_value=Path(self.temp_dir)):
             success, message = self.hook_manager.uninstall_hook()
@@ -809,7 +809,7 @@ class TestGitHookManager(unittest.TestCase):
             self.assertIn('Hook not installed', message)
     
     def test_uninstall_hook_not_ours(self):
-        """Error when hook exists but isn't DirTickets hook."""
+        """Error when hook exists but isn't sidecar hook."""
         hook_file = self.hooks_dir / "post-checkout"
         hook_file.write_text("#!/bin/sh\necho 'other hook'\n")
         
@@ -817,7 +817,7 @@ class TestGitHookManager(unittest.TestCase):
             success, message = self.hook_manager.uninstall_hook()
             
             self.assertFalse(success)
-            self.assertIn('not a DirTickets hook', message)
+            self.assertIn('not a sidecar hook', message)
             self.assertTrue(hook_file.exists())  # Should not be deleted
 
 
@@ -966,7 +966,7 @@ class TestCLI(unittest.TestCase):
                 with self.assertRaises(SystemExit):
                     main.main()
                 output = mock_stdout.getvalue()
-                self.assertIn('DirTickets', output)
+                self.assertIn('sidecar', output.lower())
     
     @patch('main.ConfigManager')
     def test_cli_config_view(self, mock_config_class):

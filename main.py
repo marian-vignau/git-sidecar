@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-DirTickets - A tool to automatically manage ticket working directories.
+GitSidecar - A tool to automatically manage ticket working directories.
 Hooks into git checkout to create and link ticket directories.
 """
 
@@ -19,7 +19,7 @@ from typing import Dict, List, Optional, Tuple
 class ConfigManager:
     """Manages configuration file using configparser."""
     
-    DEFAULT_CONFIG_DIR = Path.home() / ".dirtickets"
+    DEFAULT_CONFIG_DIR = Path.home() / ".sidecar"
     DEFAULT_CONFIG_FILE = DEFAULT_CONFIG_DIR / "config.ini"
     
     def __init__(self, config_file: Optional[Path] = None):
@@ -402,7 +402,7 @@ class GitHookManager:
         script_path_escaped = script_path_str.replace('"', '\\"')
         
         hook_content = f"""#!/bin/sh
-# DirTickets post-checkout hook
+# sidecar post-checkout hook
 "{python_exec}" "{script_path_escaped}" process
 """
         
@@ -427,12 +427,12 @@ class GitHookManager:
         if not hook_file.exists():
             return False, "Hook not installed"
         
-        # Check if it's our hook (contains DirTickets)
+        # Check if it's our hook (contains sidecar)
         try:
             with open(hook_file, 'r') as f:
                 content = f.read()
-                if 'DirTickets' not in content:
-                    return False, "Hook exists but is not a DirTickets hook"
+                if 'sidecar' not in content:
+                    return False, "Hook exists but is not a sidecar hook"
         except Exception:
             return False, "Cannot read hook file"
         
@@ -501,7 +501,7 @@ class TicketManager:
 def main():
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
-        description='DirTickets - Manage ticket working directories automatically'
+        description='GitSidecar - Manage ticket working directories automatically'
     )
     
     subparsers = parser.add_subparsers(dest='command', help='Command to execute')
