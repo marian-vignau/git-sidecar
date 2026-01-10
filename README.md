@@ -4,18 +4,6 @@
   <img alt="GitSidecar logo" src="LogoC.png" width="180" />
 </p>
 
-<p align="center">
-  <a href="https://github.com/marian-vignau/GitSidecar/actions/workflows/ci.yml">
-    <img alt="Build Status" src="https://github.com/marian-vignau/GitSidecar/actions/workflows/ci.yml/badge.svg">
-  </a>
-  <a href="https://codecov.io/gh/marian-vignau/GitSidecar" >
-    <img src="https://codecov.io/gh/marian-vignau/GitSidecar/branch/main/graph/badge.svg" alt="Code Coverage"/>
-  </a>
-  <a href="https://github.com/marian-vignau/GitSidecar/blob/main/LICENSE">
-    <img alt="License" src="https://img.shields.io/github/license/marian-vignau/GitSidecar">
-  </a>
-</p>
-
 
 **Automatically manage working directories for your git ticket branches**
 
@@ -87,32 +75,45 @@ This tool is perfect for:
 
 ## 📋 Prerequisites
 
-- Python 3.7 or higher
+- Python 3.8 or higher
 - Git installed and configured
 - A git repository (for using the hook functionality)
+- `pipx` or `uvx` for installation (recommended)
 
 ## 🚀 Installation
+
+### Recommended: Install via pipx or uvx
+
+Install from GitHub repository:
+
+**Using pipx:**
+```bash
+pipx install git+https://github.com/<user>/<repo>.git
+```
+
+**Using uvx (from uv):**
+```bash
+uvx sidecar@git+https://github.com/<user>/<repo>.git
+```
+
+After installation, the `sidecar` command will be available globally.
+
+### Alternative: Manual Installation
 
 1. **Clone or download this repository**:
    ```bash
    git clone <repository-url>
-   cd sidecar
+   cd GitSidecar
    ```
 
-2. **Make the script executable** (if needed):
+2. **Install locally** (optional, for development):
    ```bash
-   chmod +x main.py
+   pip install -e .
    ```
 
-3. **Install the git hook** in your repository:
+3. **Or run directly** (without installation):
    ```bash
    python3 main.py hook install
-   ```
-
-   Or install it from any git repository:
-   ```bash
-   cd /path/to/your/git/repo
-   python3 /path/to/sidecar/main.py hook install
    ```
 
 ## 📖 Usage
@@ -122,19 +123,19 @@ This tool is perfect for:
 1. **Configure Sidecar** (optional - uses sensible defaults):
    ```bash
    # View current configuration
-   python3 main.py config --view
+   sidecar config --view
 
    # Set workspace base directory
-   python3 main.py config --set paths workspace_base ~/tickets
+   sidecar config --set paths workspace_base ~/tickets
 
    # Set tools library path
-   python3 main.py config --set paths tools_library_path ~/tools
+   sidecar config --set paths tools_library_path ~/tools
 
    # Configure link locations (comma-separated)
-   python3 main.py config --set links current_ticket_link_locations ~/Downloads,~/Desktop
+   sidecar config --set links current_ticket_link_locations ~/Downloads,~/Desktop
 
    # Install git hook 
-   python3 main.py hook install
+   sidecar hook install
    ```
 
 2. **Work with your tickets normally**:
@@ -148,47 +149,49 @@ This tool is perfect for:
 
 3. **List all ticket directories**:
    ```bash
-   python3 main.py list
+   sidecar list
    ```
 
 ### Commands
 
+All commands use the `sidecar` command (or `python3 main.py` if running directly).
+
 #### Install Git Hook
 ```bash
-python3 main.py hook install
+sidecar hook install
 ```
 Installs a post-checkout hook that automatically processes branches when you checkout.
 
 #### Uninstall Git Hook
 ```bash
-python3 main.py hook uninstall
+sidecar hook uninstall
 ```
 Removes the Sidecar post-checkout hook.
 
 #### Process Current Checkout (Manual)
 ```bash
-python3 main.py process
+sidecar process
 ```
 Manually process the current git branch (useful for testing or if you prefer not to use hooks).
 
 #### View Configuration
 ```bash
-python3 main.py config --view
+sidecar config --view
 ```
 Display current configuration settings.
 
 #### Set Configuration
 ```bash
-python3 main.py config --set <section> <key> <value>
+sidecar config --set <section> <key> <value>
 ```
 Update a configuration value. Example:
 ```bash
-python3 main.py config --set paths workspace_base ~/my-tickets
+sidecar config --set paths workspace_base ~/my-tickets
 ```
 
 #### List Ticket Directories
 ```bash
-python3 main.py list
+sidecar list
 ```
 List all existing ticket directories in your workspace.
 
@@ -232,10 +235,10 @@ The default pattern matches branches like:
 To customize, adjust the pattern components:
 ```bash
 # Example: Match only uppercase prefixes with 2-5 chars
-python3 main.py config --set ticket_pattern prefix_pattern [A-Z]{2,5}
+sidecar config --set ticket_pattern prefix_pattern [A-Z]{2,5}
 
 # Example: Only allow hyphens as separators
-python3 main.py config --set ticket_pattern separator -
+sidecar config --set ticket_pattern separator -
 ```
 
 ## 📁 Directory Structure Example
@@ -270,8 +273,8 @@ After checking out `JIRA-789-implement-authentication`:
 
 ### Directory Not Created
 - Verify you're in a git repository: `git rev-parse --git-dir`
-- Check branch name matches your ticket pattern: `python3 main.py config --view`
-- Try manual processing: `python3 main.py process`
+- Check branch name matches your ticket pattern: `sidecar config --view`
+- Try manual processing: `sidecar process`
 
 ### Symlink Errors (Windows)
 - Ensure you have administrator privileges or Developer Mode enabled
@@ -331,7 +334,7 @@ The `main` branch is protected. Direct commits to `main` are not allowed. All ch
 
 ## 📝 License
 
-[Add your license here]
+This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 

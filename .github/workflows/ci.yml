@@ -59,3 +59,38 @@ jobs:
       - name: Basic import check
         run: |
           python3 -c "import main; import test_sidecar"
+
+  package:
+    name: Package Installation Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install build tools
+        run: |
+          python3 -m pip install --upgrade pip setuptools wheel build
+      
+      - name: Build package
+        run: |
+          python3 -m build
+      
+      - name: Install package
+        run: |
+          python3 -m pip install dist/*.whl
+      
+      - name: Verify entry point
+        run: |
+          which sidecar
+          sidecar --help
+          sidecar config --view
+      
+      - name: Test entry point works
+        run: |
+          sidecar config --view | grep -q "paths" || exit 1

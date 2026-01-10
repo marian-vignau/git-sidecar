@@ -698,7 +698,10 @@ class TestGitHookManager(unittest.TestCase):
         self.script_path = Path(self.temp_dir) / "main.py"
         self.script_path.touch()
         
-        self.hook_manager = main.GitHookManager(self.script_path)
+        # Patch shutil.which to return None so tests use script path approach
+        # (simulating direct execution, not installed package)
+        with patch('main.shutil.which', return_value=None):
+            self.hook_manager = main.GitHookManager(self.script_path)
     
     def tearDown(self):
         """Clean up test fixtures."""

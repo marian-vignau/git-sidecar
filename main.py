@@ -364,8 +364,13 @@ class CurrentTicketLinker:
 class GitHookManager:
     """Manages git post-checkout hook installation."""
     
-    def __init__(self, script_path: Path):
+    def __init__(self, script_path: Optional[Path] = None):
         self.script_path = script_path
+        self.use_command = self._check_command_available()
+    
+    def _check_command_available(self) -> bool:
+        """Check if 'sidecar' command is available in PATH."""
+        return shutil.which('sidecar') is not None
     
     def find_git_repo(self, start_path: Path = None) -> Optional[Path]:
         """Find .git directory starting from start_path or current directory."""
@@ -393,18 +398,25 @@ class GitHookManager:
         
         hook_file = hooks_dir / 'post-checkout'
         
-        # Get Python executable path
-        python_exec = sys.executable
-        
-        # Create hook script
-        script_path_str = str(self.script_path.resolve())
-        # Escape quotes in path for shell script
-        script_path_escaped = script_path_str.replace('"', '\\"')
-        
-        hook_content = f"""#!/bin/sh
+        # Determine how to call sidecar: use command if available, else use script path
+        if self.use_command:
+            # Installed as package - use 'sidecar' command directly
+            hook_content = """#!/bin/sh
+# sidecar post-checkout hook
+sidecar process
+"""
+        elif self.script_path:
+            # Direct execution - use Python with script path
+            python_exec = sys.executable
+            script_path_str = str(self.script_path.resolve())
+            # Escape quotes for shell script
+            script_path_escaped = script_path_str.replace('"', '\\"')
+            hook_content = f"""#!/bin/sh
 # sidecar post-checkout hook
 "{python_exec}" "{script_path_escaped}" process
 """
+        else:
+            return False, "Cannot determine how to run sidecar. Please install via pipx/uvx or provide script path."
         
         try:
             with open(hook_file, 'w') as f:
@@ -530,7 +542,9 @@ def main():
         parser.print_help()
         return 1
     
-    script_path = Path(__file__).resolve()
+    # Determine script path - only needed if not installed as package
+    # GitHookManager will auto-detect if 'sidecar' command is available
+    script_path = None if shutil.which('sidecar') else Path(__file__).resolve()
     
     if args.command == 'hook':
         if not args.hook_action:
