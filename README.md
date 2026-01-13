@@ -579,6 +579,97 @@ Contributions are welcome! Please follow these guidelines:
    ```
    All tests must pass before submitting a Pull Request.
 
+### End-to-End Testing with Docker
+
+GitSidecar includes comprehensive end-to-end (E2E) tests that verify the complete workflow in an isolated Docker environment. The E2E tests create two test repositories with different ticket patterns and verify all core functionality.
+
+#### Prerequisites
+
+- Docker and Docker Compose installed
+- Project directory mounted in the container
+
+#### Running E2E Tests
+
+**Using Docker Compose (Recommended):**
+
+```bash
+# From the project root directory
+docker-compose up --build
+```
+
+This will:
+1. Build the Docker image with all dependencies
+2. Mount the current project directory into the container
+3. Run the complete E2E test suite
+4. Keep the container running for debugging if tests fail
+
+**Using Docker directly:**
+
+```bash
+# Build the image
+docker build -t gitsidecar-e2e .
+
+# Run the tests
+docker run --rm -v $(pwd):/workspace gitsidecar-e2e
+```
+
+#### What the E2E Tests Verify
+
+The E2E test suite (`test-e2e.sh`) validates:
+
+- **Repository Setup**: Two test repositories with different ticket patterns
+- **Hook Installation**: Git hooks are properly installed and executable
+- **Ticket Directory Creation**: Directories are created when checking out ticket branches
+- **Directory Reuse**: Existing directories are reused for the same ticket number
+- **Symlink Management**: CurrentTicket symlinks are created and updated correctly
+- **Tool Linking**: Tools library is properly symlinked into ticket directories
+- **Standard Branch Handling**: Standard branches (main, develop) don't create directories
+- **Multi-Repository Isolation**: Different repositories maintain separate workspace directories
+- **Cross-Repository Verification**: Repositories don't interfere with each other
+
+#### Test Structure
+
+The E2E tests create:
+- **Repo A**: Uses ticket pattern `[A-Z]{2,5}` (e.g., `JIRA-123-feature`)
+- **Repo B**: Uses default ticket pattern (e.g., `TICKET-789-feature`)
+- **Tools Library**: Mock tools directory with notebooks, scripts, and utils
+- **Workspace**: Ticket directories in `~/tickets/<repo-id>/<ticket-name>/`
+
+#### Debugging Failed Tests
+
+If tests fail, the container will drop into an interactive bash shell where you can:
+
+```bash
+# Inspect test repositories
+ls -la /test-repos/
+
+# Check ticket directories
+ls -la ~/tickets/
+
+# View configuration
+sidecar config --view
+
+# Check specific repository configuration
+sidecar repos list
+sidecar repos show <repo-id>
+
+# Manually test commands
+cd /test-repos/repo-a
+sidecar process
+```
+
+#### Test Output
+
+The test script provides colored output:
+- 🟢 **Green [INFO]**: Setup and informational messages
+- 🟡 **Yellow [TEST]**: Individual test execution
+- 🔴 **Red [ERROR]**: Test failures and errors
+
+At the end, a summary shows:
+- Total tests passed
+- Total tests failed
+- List of failed assertions
+
 ### Pull Request Process
 
 1. **Create a feature branch** from `main`:

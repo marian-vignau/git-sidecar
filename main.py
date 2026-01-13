@@ -1102,20 +1102,32 @@ def main():
             repo_id = args.repo if hasattr(args, 'repo') and args.repo else None
             default = args.default if hasattr(args, 'default') else False
             try:
-                config.set(section, key, value, repo_id=repo_id, default=default)
+                # Determine the correct target before calling set() to avoid double writes
                 if default:
-                    print(f"Default configuration updated: [{section}] {key} = {value}")
+                    # Explicitly set in default section
+                    target_repo_id = None
+                    target_default = True
+                    message = f"Default configuration updated: [{section}] {key} = {value}"
                 elif repo_id:
-                    print(f"Repository '{repo_id}' configuration updated: [{section}] {key} = {value}")
+                    # Explicitly set for specific repository
+                    target_repo_id = repo_id
+                    target_default = False
+                    message = f"Repository '{repo_id}' configuration updated: [{section}] {key} = {value}"
                 else:
                     # Detect current repo context
                     current_repo = config.get_current_repo_id()
                     if current_repo:
-                        config.set(section, key, value, repo_id=current_repo)
-                        print(f"Repository '{current_repo}' configuration updated: [{section}] {key} = {value}")
+                        target_repo_id = current_repo
+                        target_default = False
+                        message = f"Repository '{current_repo}' configuration updated: [{section}] {key} = {value}"
                     else:
-                        config.set(section, key, value, default=True)
-                        print(f"Default configuration updated: [{section}] {key} = {value}")
+                        target_repo_id = None
+                        target_default = True
+                        message = f"Default configuration updated: [{section}] {key} = {value}"
+                
+                # Call set() only once with the determined target
+                config.set(section, key, value, repo_id=target_repo_id, default=target_default)
+                print(message)
                 return 0
             except Exception as e:
                 print(f"Error updating configuration: {e}")
