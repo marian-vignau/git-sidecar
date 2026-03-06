@@ -129,7 +129,15 @@ get_repo_id() {
     cd "$repo_dir"
     # Get repo ID by running sidecar config --view and extracting it
     # For local repos, it will be local/repo-name-<hash>
-    sidecar config --view 2>/dev/null | grep -i "repo:" | head -1 | awk '{print $2}' || echo ""
+    sidecar config --view 2>/dev/null | grep -i '^\[repo:' | head -1 | sed 's/^\[repo:\(.*\)\]$/\1/' || echo ""
+}
+
+get_workspace_dir() {
+    # Mirror Python's _sanitize_repo_name: strip 'local/' prefix, replace remaining slashes with underscores
+    local repo_id="$1"
+    local name="${repo_id#local/}"
+    name="${name//\//_}"
+    echo "$WORKSPACE_BASE/$name"
 }
 
 install_hook_repo_a() {
@@ -200,19 +208,20 @@ test_repo_a_first_ticket() {
     cd "$REPO_A_DIR"
     git checkout develop
     git checkout -b JIRA-123-first-feature
-    
+
     local repo_id=$(get_repo_id "$REPO_A_DIR")
-    local ticket_dir="$WORKSPACE_BASE/$repo_id/JIRA-123-first-feature"
-    
+    local repo_workspace=$(get_workspace_dir "$repo_id")
+    local ticket_dir="$repo_workspace/JIRA-123-first-feature"
+
     # Wait a moment for hook to execute
     sleep 1
-    
+
     assert "[ -d \"$ticket_dir\" ]" "Repo A first ticket directory created"
     assert "[ -L \"$HOME/Downloads/CurrentTicket\" ]" "CurrentTicket symlink exists"
-    
+
     local symlink_target=$(readlink -f "$HOME/Downloads/CurrentTicket")
     assert "[ \"$symlink_target\" = \"$ticket_dir\" ]" "CurrentTicket symlink points to correct directory"
-    
+
     # Check tool symlinks (may not exist if tools library setup failed, so make it non-fatal)
     if [ -d "$TOOLS_DIR/notebooks" ]; then
         assert "[ -L \"$ticket_dir/notebooks\" ]" "Notebooks symlink exists"
@@ -223,16 +232,17 @@ test_repo_a_switch_branch() {
     log_test "Testing Repo A: Switch to another branch (JIRA-456-second-feature)..."
     cd "$REPO_A_DIR"
     git checkout -b JIRA-456-second-feature
-    
+
     local repo_id=$(get_repo_id "$REPO_A_DIR")
-    local new_ticket_dir="$WORKSPACE_BASE/$repo_id/JIRA-456-second-feature"
-    local old_ticket_dir="$WORKSPACE_BASE/$repo_id/JIRA-123-first-feature"
-    
+    local repo_workspace=$(get_workspace_dir "$repo_id")
+    local new_ticket_dir="$repo_workspace/JIRA-456-second-feature"
+    local old_ticket_dir="$repo_workspace/JIRA-123-first-feature"
+
     sleep 1
-    
+
     assert "[ -d \"$new_ticket_dir\" ]" "Repo A second ticket directory created"
     assert "[ -d \"$old_ticket_dir\" ]" "Repo A first ticket directory still exists"
-    
+
     local symlink_target=$(readlink -f "$HOME/Downloads/CurrentTicket")
     assert "[ \"$symlink_target\" = \"$new_ticket_dir\" ]" "CurrentTicket symlink updated to new directory"
 }
@@ -241,17 +251,18 @@ test_repo_a_same_ticket_reuse() {
     log_test "Testing Repo A: Create branch with same ticket number (JIRA-123-different-description)..."
     cd "$REPO_A_DIR"
     git checkout -b JIRA-123-different-description
-    
+
     local repo_id=$(get_repo_id "$REPO_A_DIR")
-    local reused_dir="$WORKSPACE_BASE/$repo_id/JIRA-123-first-feature"
-    local new_dir="$WORKSPACE_BASE/$repo_id/JIRA-123-different-description"
-    
+    local repo_workspace=$(get_workspace_dir "$repo_id")
+    local reused_dir="$repo_workspace/JIRA-123-first-feature"
+    local new_dir="$repo_workspace/JIRA-123-different-description"
+
     sleep 1
-    
+
     # Should reuse the existing directory, not create a new one
     assert "[ -d \"$reused_dir\" ]" "Repo A reused ticket directory exists"
     assert "[ ! -d \"$new_dir\" ]" "Repo A did not create duplicate directory"
-    
+
     local symlink_target=$(readlink -f "$HOME/Downloads/CurrentTicket")
     assert "[ \"$symlink_target\" = \"$reused_dir\" ]" "CurrentTicket symlink points to reused directory"
 }
@@ -259,23 +270,24 @@ test_repo_a_same_ticket_reuse() {
 test_repo_a_standard_branches() {
     log_test "Testing Repo A: Switch to standard branches (develop, main)..."
     cd "$REPO_A_DIR"
-    
+
     # Count directories before
     local repo_id=$(get_repo_id "$REPO_A_DIR")
-    local before_count=$(find "$WORKSPACE_BASE/$repo_id" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
-    
+    local repo_workspace=$(get_workspace_dir "$repo_id")
+    local before_count=$(find "$repo_workspace" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
+
     # Switch to develop
     git checkout develop
     sleep 1
-    
-    local after_develop_count=$(find "$WORKSPACE_BASE/$repo_id" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
+
+    local after_develop_count=$(find "$repo_workspace" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
     assert "[ \"$after_develop_count\" = \"$before_count\" ]" "No new directory created when switching to develop"
-    
+
     # Switch to main
     git checkout main
     sleep 1
-    
-    local after_main_count=$(find "$WORKSPACE_BASE/$repo_id" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
+
+    local after_main_count=$(find "$repo_workspace" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
     assert "[ \"$after_main_count\" = \"$before_count\" ]" "No new directory created when switching to main"
 }
 
@@ -283,14 +295,15 @@ test_repo_a_return_to_ticket() {
     log_test "Testing Repo A: Return to ticket branch..."
     cd "$REPO_A_DIR"
     git checkout JIRA-123-first-feature
-    
+
     local repo_id=$(get_repo_id "$REPO_A_DIR")
-    local ticket_dir="$WORKSPACE_BASE/$repo_id/JIRA-123-first-feature"
-    
+    local repo_workspace=$(get_workspace_dir "$repo_id")
+    local ticket_dir="$repo_workspace/JIRA-123-first-feature"
+
     sleep 1
-    
+
     assert "[ -d \"$ticket_dir\" ]" "Repo A ticket directory still exists"
-    
+
     local symlink_target=$(readlink -f "$HOME/Downloads/CurrentTicket")
     assert "[ \"$symlink_target\" = \"$ticket_dir\" ]" "CurrentTicket symlink points to correct directory"
 }
@@ -312,15 +325,16 @@ test_repo_b_first_ticket() {
     cd "$REPO_B_DIR"
     git checkout develop
     git checkout -b TICKET-789-feature-one
-    
+
     local repo_id=$(get_repo_id "$REPO_B_DIR")
-    local ticket_dir="$WORKSPACE_BASE/$repo_id/TICKET-789-feature-one"
-    
+    local repo_workspace=$(get_workspace_dir "$repo_id")
+    local ticket_dir="$repo_workspace/TICKET-789-feature-one"
+
     sleep 1
-    
+
     assert "[ -d \"$ticket_dir\" ]" "Repo B first ticket directory created"
     assert "[ -L \"$HOME/Downloads/CurrentTicket\" ]" "CurrentTicket symlink exists"
-    
+
     local symlink_target=$(readlink -f "$HOME/Downloads/CurrentTicket")
     assert "[ \"$symlink_target\" = \"$ticket_dir\" ]" "CurrentTicket symlink points to correct directory"
 }
@@ -329,16 +343,17 @@ test_repo_b_switch_branch() {
     log_test "Testing Repo B: Switch to another branch (TICKET-101-feature-two)..."
     cd "$REPO_B_DIR"
     git checkout -b TICKET-101-feature-two
-    
+
     local repo_id=$(get_repo_id "$REPO_B_DIR")
-    local new_ticket_dir="$WORKSPACE_BASE/$repo_id/TICKET-101-feature-two"
-    local old_ticket_dir="$WORKSPACE_BASE/$repo_id/TICKET-789-feature-one"
-    
+    local repo_workspace=$(get_workspace_dir "$repo_id")
+    local new_ticket_dir="$repo_workspace/TICKET-101-feature-two"
+    local old_ticket_dir="$repo_workspace/TICKET-789-feature-one"
+
     sleep 1
-    
+
     assert "[ -d \"$new_ticket_dir\" ]" "Repo B second ticket directory created"
     assert "[ -d \"$old_ticket_dir\" ]" "Repo B first ticket directory still exists"
-    
+
     local symlink_target=$(readlink -f "$HOME/Downloads/CurrentTicket")
     assert "[ \"$symlink_target\" = \"$new_ticket_dir\" ]" "CurrentTicket symlink updated to new directory"
 }
@@ -347,17 +362,18 @@ test_repo_b_same_ticket_reuse() {
     log_test "Testing Repo B: Create branch with same ticket number (TICKET-789-another-desc)..."
     cd "$REPO_B_DIR"
     git checkout -b TICKET-789-another-desc
-    
+
     local repo_id=$(get_repo_id "$REPO_B_DIR")
-    local reused_dir="$WORKSPACE_BASE/$repo_id/TICKET-789-feature-one"
-    local new_dir="$WORKSPACE_BASE/$repo_id/TICKET-789-another-desc"
-    
+    local repo_workspace=$(get_workspace_dir "$repo_id")
+    local reused_dir="$repo_workspace/TICKET-789-feature-one"
+    local new_dir="$repo_workspace/TICKET-789-another-desc"
+
     sleep 1
-    
+
     # Should reuse the existing directory
     assert "[ -d \"$reused_dir\" ]" "Repo B reused ticket directory exists"
     assert "[ ! -d \"$new_dir\" ]" "Repo B did not create duplicate directory"
-    
+
     local symlink_target=$(readlink -f "$HOME/Downloads/CurrentTicket")
     assert "[ \"$symlink_target\" = \"$reused_dir\" ]" "CurrentTicket symlink points to reused directory"
 }
@@ -365,20 +381,21 @@ test_repo_b_same_ticket_reuse() {
 test_repo_b_standard_branches() {
     log_test "Testing Repo B: Switch to standard branches (develop, main)..."
     cd "$REPO_B_DIR"
-    
+
     local repo_id=$(get_repo_id "$REPO_B_DIR")
-    local before_count=$(find "$WORKSPACE_BASE/$repo_id" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
-    
+    local repo_workspace=$(get_workspace_dir "$repo_id")
+    local before_count=$(find "$repo_workspace" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
+
     git checkout develop
     sleep 1
-    
-    local after_develop_count=$(find "$WORKSPACE_BASE/$repo_id" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
+
+    local after_develop_count=$(find "$repo_workspace" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
     assert "[ \"$after_develop_count\" = \"$before_count\" ]" "No new directory created when switching to develop"
-    
+
     git checkout main
     sleep 1
-    
-    local after_main_count=$(find "$WORKSPACE_BASE/$repo_id" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
+
+    local after_main_count=$(find "$repo_workspace" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
     assert "[ \"$after_main_count\" = \"$before_count\" ]" "No new directory created when switching to main"
 }
 
@@ -386,34 +403,35 @@ test_repo_b_return_to_ticket() {
     log_test "Testing Repo B: Return to ticket branch..."
     cd "$REPO_B_DIR"
     git checkout TICKET-789-feature-one
-    
+
     local repo_id=$(get_repo_id "$REPO_B_DIR")
-    local ticket_dir="$WORKSPACE_BASE/$repo_id/TICKET-789-feature-one"
-    
+    local repo_workspace=$(get_workspace_dir "$repo_id")
+    local ticket_dir="$repo_workspace/TICKET-789-feature-one"
+
     sleep 1
-    
+
     assert "[ -d \"$ticket_dir\" ]" "Repo B ticket directory still exists"
-    
+
     local symlink_target=$(readlink -f "$HOME/Downloads/CurrentTicket")
     assert "[ \"$symlink_target\" = \"$ticket_dir\" ]" "CurrentTicket symlink points to correct directory"
 }
 
 test_cross_repo_isolation() {
     log_test "Testing cross-repository isolation..."
-    
+
     local repo_a_id=$(get_repo_id "$REPO_A_DIR")
     local repo_b_id=$(get_repo_id "$REPO_B_DIR")
-    
+
     assert "[ \"$repo_a_id\" != \"$repo_b_id\" ]" "Repositories have different IDs"
-    
-    local repo_a_dir="$WORKSPACE_BASE/$repo_a_id"
-    local repo_b_dir="$WORKSPACE_BASE/$repo_b_id"
-    
-    assert "[ -d \"$repo_a_dir\" ]" "Repo A workspace directory exists"
-    assert "[ -d \"$repo_b_dir\" ]" "Repo B workspace directory exists"
-    
+
+    local repo_a_workspace=$(get_workspace_dir "$repo_a_id")
+    local repo_b_workspace=$(get_workspace_dir "$repo_b_id")
+
+    assert "[ -d \"$repo_a_workspace\" ]" "Repo A workspace directory exists"
+    assert "[ -d \"$repo_b_workspace\" ]" "Repo B workspace directory exists"
+
     # Verify they are separate
-    assert "[ \"$repo_a_dir\" != \"$repo_b_dir\" ]" "Repositories have separate workspace directories"
+    assert "[ \"$repo_a_workspace\" != \"$repo_b_workspace\" ]" "Repositories have separate workspace directories"
 }
 
 print_test_summary() {

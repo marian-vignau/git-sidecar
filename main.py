@@ -507,8 +507,11 @@ class DirectoryManager:
         # Get workspace_base from config (repo-specific or default)
         workspace_base = self.config.get_path('paths', 'workspace_base', repo_id=repo_id)
         
-        # Check if this is the default workspace_base path (not configured for repo)
-        default_workspace_base = self.config.get_path('paths', 'workspace_base', repo_id=None, fallback='~/tickets')
+        # Get the global default workspace_base without repo context.
+        # Use a fresh ConfigManager to avoid this instance's repo_id leaking into the lookup
+        # (ConfigManager.get() falls back to self._repo_id when repo_id=None is passed).
+        global_config = ConfigManager(self.config.config_file)
+        default_workspace_base = global_config.get_path('paths', 'workspace_base', fallback='~/tickets')
         
         # If repo_id provided and workspace_base matches default (repo not specifically configured),
         # append repo name to make it repo-scoped

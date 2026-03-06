@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     volumes:
       # Mount the project directory so changes are reflected without rebuild
-      - .:/workspace
+      - ..:/workspace
     # Keep container running for interactive debugging if tests fail
     stdin_open: true
     tty: true
